@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Giờ Lễ VN">
+<title>Giờ Lễ Nhà Thờ Toàn Quốc — Tìm nhà thờ gần nhất</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;overflow-x:hidden;overscroll-behavior:none;background:#F0F2F5}
+body{font-family:Inter,system-ui,sans-serif;color:#17211b;font-size:16px}
+button,input,select,textarea{font-size:16px;font-family:inherit}
+.wrap{max-width:480px;margin:0 auto;min-height:100dvh;background:#F0F2F5;padding-bottom:86px}
+@media(min-width:900px){.wrap{max-width:1100px}}
+header{background:linear-gradient(135deg,#14532d,#166534 55%,#b45309);color:#fff;padding:18px 16px 14px;position:sticky;top:0;z-index:500;box-shadow:0 4px 18px rgba(0,0,0,.18)}
+header h1{margin:0;font-size:21px;line-height:1.2} header p{margin:5px 0 0;font-size:13px;opacity:.92}
+.stats{display:flex;gap:8px;margin-top:12px}.stat{flex:1;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:8px;text-align:center}.stat b{display:block;font-size:17px}.stat span{font-size:11px;opacity:.9}
+.searchbox{background:#fff;margin:12px;padding:12px;border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.searchbox input,.searchbox select{width:100%;height:48px;border:1.5px solid #d7ddd9;border-radius:12px;padding:0 12px;background:#fff;margin-bottom:8px}
+.row{display:flex;gap:8px}.row>*{flex:1}
+.btn{height:48px;border:0;border-radius:12px;font-weight:700;cursor:pointer;padding:0 12px}
+.btn-green{background:#166534;color:#fff}.btn-gold{background:#d97706;color:#fff}.btn-light{background:#eef3ef;color:#14532d;border:1.5px solid #cfe0d2}
+.btn:active{transform:scale(.98)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:0 12px 4px;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
+.chip{white-space:nowrap;border:1.5px solid #cfe0d2;background:#fff;border-radius:999px;padding:9px 13px;font-weight:600;font-size:14px;cursor:pointer}
+.chip.on{background:#14532d;color:#fff;border-color:#14532d}
+.section{padding:6px 12px}.section h2{font-size:17px;margin:10px 2px}
+.card{background:#fff;border-radius:16px;padding:14px;margin-bottom:10px;box-shadow:0 2px 10px rgba(0,0,0,.05);cursor:pointer}
+.card h3{margin:0 0 4px;font-size:16px}.meta{font-size:13px;color:#5b6b60;line-height:1.45}
+.times{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.time{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;font-weight:700;font-size:13px;border-radius:999px;padding:5px 9px}
+.time.next{background:#d97706;color:#fff;border-color:#d97706}
+.time.past{opacity:.38;background:#f1f5f2;color:#526}
+.dist{float:right;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-weight:800;font-size:12px;border-radius:999px;padding:4px 8px}
+.badge{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:3px 7px;background:#eff6ff;color:#1d4ed8}
+.badge.warn{background:#fef3c7;color:#92400e}
+#map{height:430px;border-radius:16px;overflow:hidden;background:#dde5dd}
+.view{display:none}.view.on{display:block}
+nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:480px;background:#fff;border-top:1px solid #e2e8e4;display:flex;z-index:600;padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+@media(min-width:900px){nav{max-width:1100px}}
+nav button{flex:1;background:none;border:0;font-size:11px;font-weight:600;color:#66766b;padding:6px 2px;cursor:pointer}nav button span{display:block;font-size:21px}nav button.on{color:#14532d}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:1000;display:none}.sheet.on{display:block}
+.sheetbox{position:absolute;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:560px;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;background:#fff;border-radius:22px 22px 0 0;padding:18px}
+.sheetbox h2{margin:0 30px 6px 0;font-size:19px}
+.close{position:absolute;right:14px;top:12px;width:40px;height:40px;border-radius:50%;border:0;background:#eef3ef;font-size:20px;cursor:pointer}
+.kv{display:grid;grid-template-columns:110px 1fr;gap:7px;font-size:14px;margin:12px 0}.kv b{color:#526157}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.note{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:10px;font-size:13px;line-height:1.5}
+.empty{background:#fff;border-radius:16px;padding:22px;text-align:center;color:#66766b}
+label{font-size:13px;font-weight:700;display:block;margin:10px 0 5px}
+textarea{width:100%;border:1.5px solid #d7ddd9;border-radius:12px;padding:11px;min-height:74px}
+.small{font-size:12px;color:#718076;line-height:1.5}
+.countdown{font-weight:800;color:#b45309}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>⛪ Giờ Lễ Toàn Quốc</h1>
+<p>Tìm giờ lễ • Bản đồ • Nhà thờ gần bạn nhất</p>
+<div class="stats"><div class="stat"><b id="stChurch">–</b><span>nhà thờ mẫu v1</span></div><div class="stat"><b>27</b><span>giáo phận VN</span></div><div class="stat"><b id="stNext">–</b><span>lễ sắp tới gần nhất</span></div></div>
+</header>
+
+<div class="searchbox">
+<input id="q" type="search" placeholder="Tìm nhà thờ, giáo xứ… VD: Tân Định, Đức Bà, Chính Tòa" autocomplete="off">
+<div class="row"><select id="fProvince"><option value="">Tất cả tỉnh / thành</option></select><select id="fDiocese"><option value="">Tất cả giáo phận</option></select></div>
+<div class="row"><button class="btn btn-green" id="btnSearch">🔎 Tìm giờ lễ</button><button class="btn btn-gold" id="btnNear">📍 Gần tôi nhất</button></div>
+<p class="small" id="geoMsg" style="margin:8px 0 0">Bấm “Gần tôi nhất” → cho phép định vị → app xếp nhà thờ theo khoảng cách và vẽ lên bản đồ. Vị trí chỉ tính trên máy bạn.</p>
+</div>
+
+<div class="chips" id="dayChips">
+<button class="chip on" data-day="today">Hôm nay</button><button class="chip" data-day="sunday">Chúa Nhật</button><button class="chip" data-day="saturday">Thứ Bảy – Lễ vọng</button><button class="chip" data-day="weekday">Ngày thường</button>
+</div>
+
+<main>
+<section class="view on" id="view-list"><div class="section"><h2 id="listTitle">Nhà thờ &amp; giờ lễ hôm nay</h2><div id="list"></div></div></section>
+<section class="view" id="view-map"><div class="section"><h2>🗺️ Bản đồ nhà thờ</h2><div id="map"></div><p class="small">Chấm xanh = nhà thờ trong dữ liệu giờ lễ. Bấm vào chấm để xem chi tiết. Khi bấm “Gần tôi nhất”, app còn tra thêm nhà thờ quanh bạn trên OpenStreetMap (có thể chưa có giờ lễ).</p><div id="osmList"></div></div></section>
+<section class="view" id="view-soon"><div class="section"><h2>⏰ Lễ sắp diễn ra</h2><div id="soon"></div></div></section>
+<section class="view" id="view-add"><div class="section"><h2>✍️ Đóng góp / cập nhật giờ lễ</h2>
+<div class="card" style="cursor:default"><p class="meta">Thấy giờ lễ sai hoặc thiếu nhà thờ? Gửi ở đây. Bản v1 lưu góp ý trên máy bạn (local) để demo quy trình — bản chính thức sẽ nối Google Sheet để quản trị duyệt và cập nhật toàn quốc.</p>
+<label>Tên nhà thờ / giáo xứ</label><input id="cName" style="width:100%;height:48px;border:1.5px solid #d7ddd9;border-radius:12px;padding:0 12px">
+<label>Tỉnh / thành + địa chỉ</label><input id="cAddr" style="width:100%;height:48px;border:1.5px solid #d7ddd9;border-radius:12px;padding:0 12px">
+<label>Giờ lễ đúng (ngày thường / Thứ Bảy / Chúa Nhật)</label><textarea id="cTimes" placeholder="VD: Ngày thường 05:30, 17:30 — Chúa Nhật 05:30, 07:30, 17:30, 19:00"></textarea>
+<button class="btn btn-green" id="btnContrib" style="width:100%;margin-top:12px">Gửi đóng góp</button><div id="contribList" style="margin-top:12px"></div></div>
+<div class="note"><b>Lộ trình toàn quốc:</b> dữ liệu đích là 2.600–4.000 nhà thờ như các trang hiện có (Giờ Lễ Việt báo gần 4.000, Hái Lộc Thánh báo 2.638). Không có API giờ lễ mở chính thức cho toàn quốc, nên bản chính thức phải dựng DB riêng: Sheet gồm Nhà thờ / Giáo phận / Tọa độ / Giờ lễ từng ngày / Ngày xác nhận / Người xác nhận — và cho từng giáo xứ tự cập nhật. App này đã sẵn khung để nạp DB đó vào.</div>
+</div></section>
+<section class="view" id="view-info"><div class="section"><h2>ℹ️ Lưu ý</h2><div class="card" style="cursor:default"><p class="meta" style="line-height:1.65">• Giờ lễ thay đổi theo mùa phụng vụ, lễ trọng, mùa hè/đông (nhất là miền Bắc) và việc riêng của cha xứ. Trước khi đi xa, nên kiểm tra fanpage giáo xứ hoặc gọi nhà thờ.<br>• Lễ chiều Thứ Bảy từ 15:00 trở đi thường là <b>lễ vọng Chúa Nhật</b>.<br>• Dữ liệu v1 là <b>dữ liệu mẫu các nhà thờ chính tòa / nổi tiếng</b>, ghi rõ “cần xác nhận” — không coi là dữ liệu toàn quốc đã kiểm chứng.<br>• Nguồn tham khảo khi dựng mẫu: Giờ Lễ Việt, Hái Lộc Thánh, trang giáo phận và các trang công bố giờ lễ công khai.</p></div></div></section>
+</main>
+</div>
+
+<nav>
+<button data-view="list" class="on"><span>⛪</span>Giờ lễ</button>
+<button data-view="map"><span>🗺️</span>Bản đồ</button>
+<button data-view="soon"><span>⏰</span>Sắp lễ</button>
+<button data-view="add"><span>✍️</span>Đóng góp</button>
+<button data-view="info"><span>ℹ️</span>Lưu ý</button>
+</nav>
+
+<div class="sheet" id="sheet"><div class="sheetbox"><button class="close" id="btnClose">×</button><div id="sheetBody"></div></div></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const CHURCHES=[
+{id:1,name:"Nhà thờ Chính Tòa Đức Bà Sài Gòn",diocese:"TGP TP. Hồ Chí Minh",province:"TP. Hồ Chí Minh",address:"01 Công Xã Paris, P. Sài Gòn, TP.HCM",lat:10.7797,lng:106.6990,cathedral:true,weekday:["05:30","17:30"],saturday:["05:30","17:30"],sunday:["05:30","08:00","09:30 Tiếng Anh","16:00","17:30","19:00"]},
+{id:2,name:"Nhà thờ Tân Định",diocese:"TGP TP. Hồ Chí Minh",province:"TP. Hồ Chí Minh",address:"289 Hai Bà Trưng, P. Tân Định, TP.HCM",lat:10.7891,lng:106.6907,weekday:["05:00","06:15","17:30","19:00"],saturday:["05:00","06:15","17:30","19:00"],sunday:["05:00","06:15","07:30","09:00","16:00","17:30","19:00"]},
+{id:3,name:"Nhà thờ Kỳ Đồng (Dòng Chúa Cứu Thế)",diocese:"TGP TP. Hồ Chí Minh",province:"TP. Hồ Chí Minh",address:"38 Kỳ Đồng, P. Nhiêu Lộc, TP.HCM",lat:10.7843,lng:106.6789,weekday:["05:00","18:00"],saturday:["05:00","18:30"],sunday:["05:00","06:30","08:00","10:00","15:30","17:00","18:30","20:00"]},
+{id:4,name:"Nhà thờ Lớn Hà Nội (Chính Tòa Thánh Giuse)",diocese:"TGP Hà Nội",province:"Hà Nội",address:"40 Nhà Chung, P. Hoàn Kiếm, Hà Nội",lat:21.0287,lng:105.8490,cathedral:true,weekday:["05:30","18:30"],saturday:["05:30","18:00"],sunday:["05:00","07:00","08:30 Thiếu nhi","10:00","11:30 Tiếng Anh","16:00","18:00","20:00 Giới trẻ"]},
+{id:5,name:"Nhà thờ Cửa Bắc",diocese:"TGP Hà Nội",province:"Hà Nội",address:"56 Phan Đình Phùng, P. Ba Đình, Hà Nội",lat:21.0395,lng:105.8412,weekday:["19:00"],saturday:["19:00"],sunday:["06:30","08:30","10:30 Tiếng Anh","19:00"]},
+{id:6,name:"Nhà thờ Hàm Long",diocese:"TGP Hà Nội",province:"Hà Nội",address:"21 Hàm Long, P. Cửa Nam, Hà Nội",lat:21.0183,lng:105.8533,weekday:["05:30","19:00"],saturday:["19:00"],sunday:["06:00","08:30 Thiếu nhi","17:00","19:00"]},
+{id:7,name:"Nhà thờ Chính Tòa Đà Nẵng (Con Gà)",diocese:"GP Đà Nẵng",province:"Đà Nẵng",address:"156 Trần Phú, P. Hải Châu, Đà Nẵng",lat:16.0668,lng:108.2232,cathedral:true,weekday:["05:00","17:15"],saturday:["05:00","17:15"],sunday:["05:15","08:00","10:00 Tiếng Anh","15:00","16:30","18:00"]},
+{id:8,name:"Nhà thờ Hội An",diocese:"GP Đà Nẵng",province:"Đà Nẵng",address:"02 Nguyễn Trường Tộ, P. Hội An, Đà Nẵng",lat:15.8798,lng:108.3337,weekday:["05:00"],saturday:["05:00","17:30 Lễ vọng"],sunday:["05:30","09:00 Thiếu nhi","16:00 Tiếng Anh","18:30"]},
+{id:9,name:"Nhà thờ Chính Tòa Phủ Cam (Huế)",diocese:"TGP Huế",province:"TP. Huế",address:"01 Nguyễn Trường Tộ, P. Thuận Hóa, TP. Huế",lat:16.4532,lng:107.5805,cathedral:true,weekday:["05:00","17:15"],saturday:["05:00","17:15"],sunday:["05:30","07:30","15:30","17:30"]},
+{id:10,name:"Nhà thờ Chính Tòa Đà Lạt (Con Gà)",diocese:"GP Đà Lạt",province:"Lâm Đồng",address:"15 Trần Phú, P. Xuân Hương, Đà Lạt, Lâm Đồng",lat:11.9366,lng:108.4379,cathedral:true,weekday:["05:15","17:15"],saturday:["05:15","17:15"],sunday:["05:30","07:00","08:30","16:00","17:15","18:30"]},
+{id:11,name:"Nhà thờ Chính Tòa Nha Trang (Núi)",diocese:"GP Nha Trang",province:"Khánh Hòa",address:"31 Thái Nguyên, P. Nha Trang, Khánh Hòa",lat:12.2472,lng:109.1880,cathedral:true,weekday:["05:00","17:00"],saturday:["05:00","17:00"],sunday:["05:00","07:00","08:30","16:00","17:30","19:00"]},
+{id:12,name:"Nhà thờ Chính Tòa Cần Thơ",diocese:"GP Cần Thơ",province:"Cần Thơ",address:"14 Nguyễn Thị Minh Khai, P. Ninh Kiều, Cần Thơ",lat:10.0333,lng:105.7831,cathedral:true,weekday:["05:00","18:00"],saturday:["05:00","18:00"],sunday:["05:00","07:00","08:30","16:00","18:00","19:30"]},
+{id:13,name:"Nhà thờ Chính Tòa Xuân Lộc",diocese:"GP Xuân Lộc",province:"Đồng Nai",address:"376 Hùng Vương, P. Long Khánh, Đồng Nai",lat:10.9370,lng:107.2430,cathedral:true,weekday:["05:00","17:15"],saturday:["05:00","17:15"],sunday:["05:00","07:00","16:00","18:00"]},
+{id:14,name:"Nhà thờ Chính Tòa Phú Cường",diocese:"GP Phú Cường",province:"TP. Hồ Chí Minh",address:"394 Cách Mạng Tháng Tám, P. Thủ Dầu Một, TP.HCM",lat:10.9805,lng:106.6519,cathedral:true,weekday:["05:00","17:30"],saturday:["05:00","17:30"],sunday:["05:00","07:30","16:00","18:00"]},
+{id:15,name:"Nhà thờ Chính Tòa Bà Rịa",diocese:"GP Bà Rịa",province:"TP. Hồ Chí Minh",address:"227 Cách Mạng Tháng Tám, P. Bà Rịa, TP.HCM",lat:10.4990,lng:107.1770,cathedral:true,weekday:["05:00","19:00"],saturday:["05:00","19:00"],sunday:["05:00","06:00","07:00","17:00","18:00","19:00"]},
+{id:16,name:"Nhà thờ Chính Tòa Vinh",diocese:"GP Vinh",province:"Nghệ An",address:"Xã Đoài, Nghệ An",lat:18.7180,lng:105.6150,cathedral:true,weekday:["05:00","19:00"],saturday:["05:00","19:00"],sunday:["05:00","07:00","15:00","19:00"]},
+{id:17,name:"Nhà thờ Chính Tòa Hải Phòng",diocese:"GP Hải Phòng",province:"Hải Phòng",address:"46 Hoàng Văn Thụ, P. Phan Bội Châu, Hải Phòng",lat:20.8620,lng:106.6825,cathedral:true,weekday:["05:30","19:00"],saturday:["05:30","19:00"],sunday:["05:30","07:00","16:30","19:00"]},
+{id:18,name:"Nhà thờ Chính Tòa Phát Diệm",diocese:"GP Phát Diệm",province:"Ninh Bình",address:"P. Phát Diệm, Ninh Bình",lat:20.0930,lng:106.0790,cathedral:true,weekday:["05:00","19:00"],saturday:["05:00","19:00"],sunday:["05:00","07:00","16:00","19:00"]},
+{id:19,name:"Nhà thờ Chính Tòa Bùi Chu",diocese:"GP Bùi Chu",province:"Ninh Bình",address:"X. Xuân Ngọc (cũ), Nam Định cũ, nay Ninh Bình",lat:20.3120,lng:106.3300,cathedral:true,weekday:["05:00","19:00"],saturday:["05:00","19:00"],sunday:["05:00","07:00","16:00","19:00"]},
+{id:20,name:"Nhà thờ Chính Tòa Quy Nhơn",diocese:"GP Quy Nhơn",province:"Gia Lai",address:"125 Trần Hưng Đạo, P. Quy Nhơn, Gia Lai",lat:13.7710,lng:109.2490,cathedral:true,weekday:["05:15","17:15"],saturday:["05:15","17:15"],sunday:["05:15","07:30","17:15"]},
+{id:21,name:"Nhà thờ Chính Tòa Kon Tum (Nhà thờ Gỗ)",diocese:"GP Kon Tum",province:"Quảng Ngãi",address:"13 Nguyễn Huệ, P. Kon Tum, Quảng Ngãi",lat:14.3430,lng:108.0020,cathedral:true,weekday:["05:00","17:30"],saturday:["05:00","17:30"],sunday:["05:00","07:30","16:30"]},
+{id:22,name:"Nhà thờ Chính Tòa Buôn Ma Thuột",diocese:"GP Ban Mê Thuột",province:"Đắk Lắk",address:"02 Phan Chu Trinh, P. Buôn Ma Thuột, Đắk Lắk",lat:12.6800,lng:108.0380,cathedral:true,weekday:["05:00","17:15"],saturday:["05:00","17:15"],sunday:["05:00","07:00","08:30","16:00","17:30"]},
+{id:23,name:"Nhà thờ Chính Tòa Mỹ Tho",diocese:"GP Mỹ Tho",province:"Đồng Tháp",address:"32 Hùng Vương, P. Mỹ Tho, Đồng Tháp",lat:10.3610,lng:106.3660,cathedral:true,weekday:["05:00","17:00"],saturday:["05:00","17:00"],sunday:["05:00","07:00","16:00","17:30"]},
+{id:24,name:"Nhà thờ Chính Tòa Long Xuyên (Nữ Vương Hòa Bình)",diocese:"GP Long Xuyên",province:"An Giang",address:"09 Nguyễn Huệ, P. Long Xuyên, An Giang",lat:10.3850,lng:105.4370,cathedral:true,weekday:["05:00","18:00"],saturday:["05:00","18:00"],sunday:["05:00","07:00","16:00","18:00"]}
+];
+let myPos=null, dayMode='today', map=null, markers=[];
+const $=id=>document.getElementById(id);
+function distKm(a,b,c,d){const R=6371,x=(c-a)*Math.PI/180,y=(d-b)*Math.PI/180,s=Math.sin(x/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(y/2)**2;return 2*R*Math.asin(Math.sqrt(s))}
+function todayKey(){const d=new Date().getDay();return d===0?'sunday':d===6?'saturday':'weekday'}
+function keyForMode(){return dayMode==='today'?todayKey():dayMode}
+function nextMass(ch){const now=new Date();const days=[0,1];for(const off of days){const dt=new Date(now);dt.setDate(now.getDate()+off);const k=dt.getDay()===0?'sunday':dt.getDay()===6?'saturday':'weekday';for(const t of ch[k]){const hm=t.match(/(\d{2}):(\d{2})/);if(!hm)continue;const m=new Date(dt);m.setHours(+hm[1],+hm[2],0,0);if(m>now)return{time:t,date:m,label:off===0?'Hôm nay':'Ngày mai'}}}return null}
+function fmtDist(d){return d<1?Math.round(d*1000)+' m':d.toFixed(1)+' km'}
+function filtered(){const q=$('q').value.trim().toLowerCase(),p=$('fProvince').value,di=$('fDiocese').value;let arr=CHURCHES.filter(c=>(!q||(c.name+' '+c.address+' '+c.diocese).toLowerCase().includes(q))&&(!p||c.province===p)&&(!di||c.diocese===di));if(myPos)arr.forEach(c=>c._d=distKm(myPos.lat,myPos.lng,c.lat,c.lng)),arr.sort((a,b)=>(a._d??1e9)-(b._d??1e9));return arr}
+function cardHTML(c){const k=keyForMode(),nx=nextMass(c),now=new Date();const times=c[k].map(t=>{const hm=t.match(/(\d{2}):(\d{2})/);let cls='time';if(nx&&t===nx.time&&keyForMode()===todayKey())cls+=' next';return `<span class="${cls}">${t}</span>`}).join('');return `<div class="card" onclick="openChurch(${c.id})">${c._d!=null?`<span class="dist">📍 ${fmtDist(c._d)}</span>`:''}<h3>${c.name}</h3><div class="meta">${c.address}<br>${c.diocese} ${c.cathedral?'• <span class="badge">Chính tòa</span>':''} <span class="badge warn">Giờ mẫu – cần xác nhận</span></div><div class="times">${times}</div>${nx?`<div class="meta" style="margin-top:8px">Lễ tiếp theo: <b>${nx.time}</b> (${nx.label}) • <span class="countdown" data-ts="${nx.date.getTime()}"></span></div>`:''}</div>`}
+function render(){const arr=filtered();$('list').innerHTML=arr.length?arr.map(cardHTML).join(''):'<div class="empty">Không tìm thấy nhà thờ phù hợp. Thử bỏ bộ lọc hoặc đóng góp nhà thờ này ở mục Đóng góp.</div>';$('listTitle').textContent=dayMode==='today'?'Nhà thờ & giờ lễ hôm nay':dayMode==='sunday'?'Giờ lễ Chúa Nhật':dayMode==='saturday'?'Giờ lễ Thứ Bảy / Lễ vọng':'Giờ lễ ngày thường';const soonArr=CHURCHES.map(c=>({c,n:nextMass(c)})).filter(x=>x.n).sort((a,b)=>a.n.date-b.n.date);$('soon').innerHTML=soonArr.slice(0,20).map(x=>cardHTML({...x.c,_soon:x.n})).join('');if(soonArr[0])$('stNext').textContent=soonArr[0].n.time.split(' ')[0];renderMarkers(arr)}
+function renderMarkers(arr){if(!map)return;markers.forEach(m=>map.removeLayer(m));markers=[];(arr||CHURCHES).forEach(c=>{const m=L.marker([c.lat,c.lng]).addTo(map).bindPopup(`<b>${c.name}</b><br>${c.address}<br><button onclick="openChurch(${c.id})">Xem giờ lễ</button>`);markers.push(m)});if(myPos){markers.push(L.circleMarker([myPos.lat,myPos.lng],{radius:9,color:'#d97706',fillColor:'#f59e0b',fillOpacity:.9}).addTo(map).bindPopup('Bạn đang ở đây'))}}
+function initMap(){if(map||!window.L)return;map=L.map('map').setView([16.2,107.8],5);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);renderMarkers(filtered())}
+window.openChurch=function(id){const c=CHURCHES.find(x=>x.id===id);if(!c)return;const nx=nextMass(c);$('sheetBody').innerHTML=`<h2>${c.name}</h2><div class="meta">${c.address}<br>${c.diocese}${c.cathedral?' • Nhà thờ Chính tòa':''}</div><div class="kv"><b>Ngày thường</b><span>${c.weekday.join(', ')}</span><b>Thứ Bảy</b><span>${c.saturday.join(', ')}</span><b>Chúa Nhật</b><span>${c.sunday.join(', ')}</span><b>Lễ tiếp theo</b><span>${nx?nx.time+' – '+nx.label:'Chưa rõ'}</span>${c._d!=null?`<b>Khoảng cách</b><span>${fmtDist(c._d)} từ vị trí của bạn</span>`:''}</div><div class="note">Giờ lễ bản mẫu v1, <b>cần xác nhận</b> với giáo xứ trước khi đi — giờ lễ có thể đổi theo mùa / lễ trọng.</div><div class="actions"><a href="https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}" target="_blank" rel="noopener"><button class="btn btn-green" style="width:100%">🧭 Chỉ đường</button></a><button class="btn btn-light" onclick="reportChurch('${c.name.replace(/'/g,"")}')">⚠️ Báo giờ sai</button></div>`;$('sheet').classList.add('on')};
+window.reportChurch=function(name){showView('add');$('cName').value=name;$('sheet').classList.remove('on');window.scrollTo({top:0,behavior:'smooth'})};
+function showView(v){document.querySelectorAll('.view').forEach(e=>e.classList.remove('on'));$('view-'+v).classList.add('on');document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.view===v));if(v==='map'){setTimeout(()=>{initMap();map&&map.invalidateSize()},80)}window.scrollTo({top:0})}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>showView(b.dataset.view));
+document.querySelectorAll('#dayChips .chip').forEach(b=>b.onclick=()=>{document.querySelectorAll('#dayChips .chip').forEach(x=>x.classList.remove('on'));b.classList.add('on');dayMode=b.dataset.day;render()});
+$('btnSearch').onclick=render;['q'].forEach(id=>$(id).addEventListener('input',render));$('fProvince').onchange=render;$('fDiocese').onchange=render;
+$('btnClose').onclick=()=>$('sheet').classList.remove('on');$('sheet').addEventListener('click',e=>{if(e.target.id==='sheet')$('sheet').classList.remove('on')});
+$('btnNear').onclick=()=>{if(!navigator.geolocation){$('geoMsg').textContent='Máy này không hỗ trợ định vị. Hãy chọn tỉnh/thành ở bộ lọc.';return}$('geoMsg').textContent='Đang lấy vị trí…';navigator.geolocation.getCurrentPosition(async pos=>{myPos={lat:pos.coords.latitude,lng:pos.coords.longitude};$('geoMsg').innerHTML=`Đã định vị (±${Math.round(pos.coords.accuracy)} m). Đang xếp nhà thờ gần nhất + tra thêm quanh bạn trên bản đồ…`;render();showView('list');try{const r=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(`[out:json][timeout:20];(node["amenity"="place_of_worship"]["religion"="christian"](around:7000,${myPos.lat},${myPos.lng});way["amenity"="place_of_worship"]["religion"="christian"](around:7000,${myPos.lat},${myPos.lng}););out center 40;`)});const j=await r.json();const els=(j.elements||[]).map(e=>({name:(e.tags&&e.tags.name)||'Nhà thờ (chưa rõ tên trên OSM)',lat:e.lat||e.center.lat,lng:e.lon||e.center.lon,d:distKm(myPos.lat,myPos.lng,e.lat||e.center.lat,e.lon||e.center.lon)})).sort((a,b)=>a.d-b.d);$('osmList').innerHTML=els.length?'<h3 style="margin:14px 2px 8px">Nhà thờ quanh bạn trên OpenStreetMap</h3>'+els.slice(0,15).map(e=>`<div class="card"><span class="dist">📍 ${fmtDist(e.d)}</span><h3>${e.name}</h3><div class="meta">Có trên bản đồ OSM, chưa khớp giờ lễ trong dữ liệu v1.</div><div class="actions"><a href="https://www.google.com/maps/dir/?api=1&destination=${e.lat},${e.lng}" target="_blank" rel="noopener"><button class="btn btn-green" style="width:100%">🧭 Chỉ đường</button></a></div></div>`).join(''):'';if(map){els.slice(0,20).forEach(e=>markers.push(L.marker([e.lat,e.lng]).addTo(map).bindPopup(e.name)))}}catch(e){$('geoMsg').textContent+=' (Tra OSM thêm không được — danh sách chính vẫn xếp theo khoảng cách rồi.)'}},err=>{$('geoMsg').textContent='Chưa lấy được vị trí: hãy cho phép định vị trong trình duyệt, hoặc lọc theo tỉnh/thành.'},{enableHighAccuracy:true,timeout:15000})};
+$('btnContrib').onclick=()=>{const name=$('cName').value.trim();if(!name){alert('Nhập tên nhà thờ trước nhé');return}const arr=JSON.parse(localStorage.getItem('giole_contrib')||'[]');arr.unshift({name,addr:$('cAddr').value,times:$('cTimes').value,at:new Date().toLocaleString('vi-VN')});localStorage.setItem('giole_contrib',JSON.stringify(arr));renderContrib();alert('Đã lưu đóng góp trên máy bạn. Bản chính thức sẽ gửi về Sheet quản trị để duyệt.')};
+function renderContrib(){const arr=JSON.parse(localStorage.getItem('giole_contrib')||'[]');$('contribList').innerHTML=arr.map(x=>`<div class="meta" style="border-top:1px solid #edf1ee;padding:8px 0"><b>${x.name}</b> — ${x.addr}<br>${x.times}<br><span class="small">${x.at}</span></div>`).join('')}
+function tick(){document.querySelectorAll('.countdown').forEach(el=>{const ms=+el.dataset.ts-Date.now();if(ms<0){el.textContent='đang diễn ra / vừa qua';return}const h=Math.floor(ms/3600000),m=Math.floor(ms%3600000/60000);el.textContent=h>0?`còn ${h}g ${m}p`:`còn ${m} phút`})}
+(function init(){[...new Set(CHURCHES.map(c=>c.province))].sort().forEach(p=>$('fProvince').insertAdjacentHTML('beforeend',`<option>${p}</option>`));[...new Set(CHURCHES.map(c=>c.diocese))].sort().forEach(p=>$('fDiocese').insertAdjacentHTML('beforeend',`<option>${p}</option>`));$('stChurch').textContent=CHURCHES.length;render();renderContrib();setInterval(tick,30000);setTimeout(tick,500);document.addEventListener('gesturestart',e=>e.preventDefault());document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault()},{passive:false})})();
+</script>
+</body>
+</html>
